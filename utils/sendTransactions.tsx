@@ -66,10 +66,12 @@ async function awaitTransactionSignatureConfirmation(
               confirmations: 0,
             }
             if (result.err) {
-              console.log('Rejected via websocket', result.err)
+              if (process.env.DEBUG)
+                console.log('Rejected via websocket', result.err)
               reject(result.err)
             } else {
-              console.log('Resolved via websocket', result)
+              if (process.env.DEBUG)
+                console.log('Resolved via websocket', result)
               resolve(result)
             }
           },
@@ -89,22 +91,27 @@ async function awaitTransactionSignatureConfirmation(
             status = signatureStatuses && signatureStatuses.value[0]
             if (!done) {
               if (!status) {
-                console.log('REST null result for', txid, status)
+                if (process.env.DEBUG)
+                  console.log('REST null result for', txid, status)
               } else if (status.err) {
-                console.log('REST error for', txid, status)
+                if (process.env.DEBUG)
+                  console.log('REST error for', txid, status)
                 done = true
                 reject(status.err)
               } else if (!status.confirmations) {
-                console.log('REST no confirmations for', txid, status)
+                if (process.env.DEBUG)
+                  console.log('REST no confirmations for', txid, status)
               } else {
-                console.log('REST confirmation for', txid, status)
+                if (process.env.DEBUG)
+                  console.log('REST confirmation for', txid, status)
                 done = true
                 resolve(status)
               }
             }
           } catch (e) {
             if (!done) {
-              console.log('REST connection error: txid', txid, e)
+              if (process.env.DEBUG)
+                console.log('REST connection error: txid', txid, e)
             }
           }
         }
@@ -187,7 +194,7 @@ export async function sendSignedTransaction({
     }
   )
 
-  console.log('Started awaiting confirmation for', txid)
+  if (process.env.DEBUG) console.log('Started awaiting confirmation for', txid)
 
   let done = false
   ;(async () => {
@@ -243,7 +250,7 @@ export async function sendSignedTransaction({
     done = true
   }
 
-  console.log('Latency', txid, getUnixTs() - startTime)
+  if (process.env.DEBUG) console.log('Latency', txid, getUnixTs() - startTime)
   return { txid, slot }
 }
 export enum SequenceType {
