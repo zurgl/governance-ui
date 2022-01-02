@@ -12,8 +12,7 @@ import { MemcmpFilter, RpcContext } from 'models/core/api'
 import { GOVERNANCE_SCHEMA } from 'models/serialisation'
 import { deserializeBorsh } from 'utils/borsh'
 import { sleep } from '@project-serum/common'
-
-const fetch = require('node-fetch')
+import fetch from 'isomorphic-fetch'
 
 export async function getRealms(rpcContext: RpcContext) {
   return getGovernanceAccountsImpl<Realm>(

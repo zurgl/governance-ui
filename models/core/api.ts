@@ -1,4 +1,4 @@
-import { Connection, PublicKey } from '@solana/web3.js'
+import { Connection, PublicKey, Keypair } from '@solana/web3.js'
 import { WalletNotConnectedError } from './errors'
 import bs58 from 'bs58'
 
@@ -7,6 +7,7 @@ import { Schema } from 'borsh'
 import { deserializeBorsh } from '../../utils/borsh'
 import { ProgramVersion } from 'models/registry/constants'
 import { SignerWalletAdapter } from '@solana/wallet-adapter-base'
+import fetch from 'isomorphic-fetch'
 
 export const SYSTEM_PROGRAM_ID = new PublicKey(
   '11111111111111111111111111111111'
@@ -16,14 +17,14 @@ export const SYSTEM_PROGRAM_ID = new PublicKey(
 export class RpcContext {
   programId: PublicKey
   programVersion: ProgramVersion
-  wallet: SignerWalletAdapter | undefined
+  wallet: SignerWalletAdapter | Keypair | undefined
   connection: Connection
   endpoint: string
 
   constructor(
     programId: PublicKey,
     programVersion: number | undefined,
-    wallet: SignerWalletAdapter | undefined,
+    wallet: SignerWalletAdapter | undefined | Keypair,
     connection: Connection,
     endpoint: string
   ) {

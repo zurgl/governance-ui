@@ -1,3 +1,5 @@
+import fetch from 'isomorphic-fetch'
+
 const urlRegex =
   // eslint-disable-next-line
   /(https:\/\/)(gist.github.com\/)([\w\/]{1,39}\/)([\w]{1,32})/

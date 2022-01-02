@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import fetch from 'isomorphic-fetch'
 
 const SANCTIONED_COUNTRIES = [
   { country: 'Antigua and Barbuda', code: 'AG' },
