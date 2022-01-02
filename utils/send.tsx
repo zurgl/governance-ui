@@ -35,7 +35,7 @@ export async function sendTransaction({
   timeout = DEFAULT_TIMEOUT,
 }: {
   transaction: Transaction
-  wallet: Wallet
+  wallet: Wallet | Keypair
   signers?: Array<Keypair>
   connection: Connection
   sendingMessage?: string
@@ -65,18 +65,23 @@ export async function signTransaction({
   connection,
 }: {
   transaction: Transaction
-  wallet: Wallet
+  wallet: Wallet | Keypair
   signers?: Array<Keypair>
   connection: Connection
 }) {
   transaction.recentBlockhash = (
     await connection.getRecentBlockhash('max')
   ).blockhash
-  transaction.setSigners(wallet.publicKey, ...signers.map((s) => s.publicKey))
-  if (signers.length > 0) {
-    transaction.partialSign(...signers)
+  if (wallet instanceof Keypair) {
+    transaction.sign(...[wallet, ...signers])
+    return transaction
+  } else {
+    transaction.setSigners(wallet.publicKey, ...signers.map((s) => s.publicKey))
+    if (signers.length > 0) {
+      transaction.partialSign(...signers)
+    }
+    return await wallet.signTransaction(transaction)
   }
-  return await wallet.signTransaction(transaction)
 }
 
 export async function signTransactions({

@@ -1,7 +1,7 @@
 // import { createCouncilAndCommunity } from './utils'
 import BN from 'bn.js'
-import { registerRealm } from './actions/registerRealm'
-import { depositGoverningTokens } from './actions/depositGoverningTokens'
+import { registerRealm } from 'actions/registerRealm'
+// import { depositGoverningTokens } from './actions/depositGoverningTokens'
 import { RpcContext } from '@models/core/api'
 import {
   createAndMintCommnunityToken,
@@ -18,7 +18,6 @@ import {
   PROGRAM_VERSION,
   RPC_ENDPOINT,
   UNIT,
-  VOTE_WEIGHT,
 } from './utils/constants'
 import { MintMaxVoteWeightSource } from '@models/accounts'
 
@@ -81,7 +80,7 @@ describe('Unitary testing of program write-instruction', () => {
       '6edoFANwjWcui3TCm9pS6a5e98PVVWf4BV4wXayHomxj'
     )
   })
-
+  /*
   test('deposit', async () => {
     await depositGoverningTokens(
       rpcContext.connection,
@@ -92,12 +91,9 @@ describe('Unitary testing of program write-instruction', () => {
       COMMUNITY_MINT,
       new BN(VOTE_WEIGHT)
     )
-
-    /*
-     * Check the good amount of token has been transfered
-     */
     expect(realmPk.toBase58()).toEqual(
       '6edoFANwjWcui3TCm9pS6a5e98PVVWf4BV4wXayHomxj'
     )
   })
+  */
 })

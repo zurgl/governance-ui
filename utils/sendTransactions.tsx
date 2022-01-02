@@ -254,7 +254,7 @@ export enum SequenceType {
 /////////////////////////////////////////
 export const sendTransactions = async (
   connection: Connection,
-  wallet: WalletSigner,
+  wallet: WalletSigner | Keypair,
   instructionSet: TransactionInstruction[][],
   signersSet: Keypair[][],
   sequenceType: SequenceType = SequenceType.Parallel,
@@ -286,20 +286,28 @@ export const sendTransactions = async (
     const transaction = new Transaction()
     instructions.forEach((instruction) => transaction.add(instruction))
     transaction.recentBlockhash = block.blockhash
-    transaction.setSigners(
-      // fee payed by the wallet owner
-      wallet.publicKey,
-      ...signers.map((s) => s.publicKey)
-    )
+    if (wallet instanceof Keypair) {
+      transaction.sign(...[wallet, ...signers])
+    } else {
+      transaction.setSigners(
+        // fee payed by the wallet owner
+        wallet.publicKey,
+        ...signers.map((s) => s.publicKey)
+      )
 
-    if (signers.length > 0) {
-      transaction.partialSign(...signers)
+      if (signers.length > 0) {
+        transaction.partialSign(...signers)
+      }
     }
-
     unsignedTxns.push(transaction)
   }
 
-  const signedTxns = await wallet.signAllTransactions(unsignedTxns)
+  let signedTxns: Transaction[]
+  if (wallet instanceof Keypair) {
+    signedTxns = [...unsignedTxns]
+  } else {
+    signedTxns = await wallet.signAllTransactions(unsignedTxns)
+  }
 
   const pendingTxns: Promise<{ txid: string; slot: number }>[] = []
 

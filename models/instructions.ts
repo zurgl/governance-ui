@@ -46,9 +46,9 @@ export class CreateRealmArgs {
 export class DepositGoverningTokensArgs {
   instruction: GovernanceInstruction =
     GovernanceInstruction.DepositGoverningTokens
-  amount: u64
+  amount: u64 | undefined
 
-  constructor(args: { amount: u64 }) {
+  constructor(args: { amount: u64 | undefined }) {
     this.amount = args.amount
   }
 }

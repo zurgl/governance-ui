@@ -10,7 +10,7 @@ import { SignerWalletAdapter } from '@solana/wallet-adapter-base'
 
 export const withCreateSplTokenAccount = async (
   connection: Connection,
-  wallet: SignerWalletAdapter | undefined,
+  wallet: SignerWalletAdapter | undefined | Keypair,
   instructions: TransactionInstruction[],
   signers: Keypair[],
   mint: PublicKey

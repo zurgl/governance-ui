@@ -20,7 +20,7 @@ export const withDepositGoverningTokens = async (
   governingTokenOwner: PublicKey,
   transferAuthority: PublicKey,
   payer: PublicKey,
-  amount: u64
+  amount?: u64
 ) => {
   const args = new DepositGoverningTokensArgs({
     amount: amount,
