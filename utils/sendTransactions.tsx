@@ -294,7 +294,7 @@ export const sendTransactions = async (
     instructions.forEach((instruction) => transaction.add(instruction))
     transaction.recentBlockhash = block.blockhash
     if (wallet instanceof Keypair) {
-      transaction.sign(...[wallet, ...signers])
+      transaction.sign(wallet, ...signers)
     } else {
       transaction.setSigners(
         // fee payed by the wallet owner

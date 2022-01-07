@@ -1,33 +1,35 @@
-// import { createCouncilAndCommunity } from './utils'
 import BN from 'bn.js'
 import { registerRealm } from 'actions/registerRealm'
-// import { depositGoverningTokens } from './actions/depositGoverningTokens'
+import { depositGoverningTokens } from 'actions/depositGoverningTokens'
+import { withdrawGoverningTokens } from 'actions/withdrawGoverningTokens'
+
 import { RpcContext } from '@models/core/api'
 import {
   createAndMintCommnunityToken,
-  createAndMintCouncilToken,
+  // createAndMintCouncilToken,
 } from './utils/token'
 import { Keypair, PublicKey } from '@solana/web3.js'
 
 import {
   COMMUNITY_MINT,
   CONNECTION,
-  COUNCIL_MINT,
+  // COUNCIL_MINT,
   FOUNDER,
   PROGRAM_PK,
   PROGRAM_VERSION,
   RPC_ENDPOINT,
   UNIT,
+  // VOTE_WEIGHT,
 } from './utils/constants'
 import { MintMaxVoteWeightSource } from '@models/accounts'
 
 describe('Unitary testing of program write-instruction', () => {
   let founder: Keypair
   let communityTokenOwnerPk: PublicKey
-  let councilTokenOwnerPk: PublicKey
+  // let councilTokenOwnerPk: PublicKey
   let rpcContext: RpcContext
   let programId: PublicKey
-  const programVersion = 2
+  const programVersion = 1
   let realmPk: PublicKey
 
   beforeAll(async () => {
@@ -36,7 +38,7 @@ describe('Unitary testing of program write-instruction', () => {
      */
     founder = FOUNDER
     communityTokenOwnerPk = await createAndMintCommnunityToken()
-    councilTokenOwnerPk = await createAndMintCouncilToken()
+    // councilTokenOwnerPk = await createAndMintCouncilToken()
     programId = PROGRAM_PK
     rpcContext = new RpcContext(
       PROGRAM_PK,
@@ -56,12 +58,12 @@ describe('Unitary testing of program write-instruction', () => {
       '6TPQhsRoxMvCaBkDo9TtDYA3vakj6VQM7SNpryK3iEcc'
     )
 
-    expect(councilTokenOwnerPk.toBase58()).toEqual(
-      'HmYBXnMLx5XLgE3uxoiTawMy94xnGA4u5vP1mqh3yh17'
-    )
+    // expect(councilTokenOwnerPk.toBase58()).toEqual(
+    //   'HmYBXnMLx5XLgE3uxoiTawMy94xnGA4u5vP1mqh3yh17'
+    // )
   })
 
-  test('createRealm', async () => {
+  test('registerRealm', async () => {
     const realmName = 'test-DAO'
     const voteWeightSource = MintMaxVoteWeightSource.FULL_SUPPLY_FRACTION
     const minTokensToCreateGovernance = new BN(UNIT)
@@ -71,29 +73,62 @@ describe('Unitary testing of program write-instruction', () => {
       programVersion,
       realmName,
       COMMUNITY_MINT,
-      COUNCIL_MINT,
+      undefined,
       voteWeightSource,
-      minTokensToCreateGovernance
+      minTokensToCreateGovernance,
+      [founder.publicKey]
     )
 
     expect(realmPk.toBase58()).toEqual(
       '6edoFANwjWcui3TCm9pS6a5e98PVVWf4BV4wXayHomxj'
     )
   })
-  /*
-  test('deposit', async () => {
+
+  test('Deposit Governing Tokens with Amount', async () => {
     await depositGoverningTokens(
-      rpcContext.connection,
-      programId,
-      rpcContext.wallet as Keypair,
+      rpcContext,
+      realmPk,
+      communityTokenOwnerPk,
+      COMMUNITY_MINT
+    )
+  })
+
+  test('Withdraw Governing Tokens', async () => {
+    await withdrawGoverningTokens(
+      rpcContext,
+      realmPk,
+      communityTokenOwnerPk,
+      COMMUNITY_MINT
+    )
+  })
+
+  /*
+  test('Deposit Governing Tokens with Amount', async () => {
+    await depositGoverningTokens(
+      rpcContext,
       realmPk,
       communityTokenOwnerPk,
       COMMUNITY_MINT,
       new BN(VOTE_WEIGHT)
     )
-    expect(realmPk.toBase58()).toEqual(
-      '6edoFANwjWcui3TCm9pS6a5e98PVVWf4BV4wXayHomxj'
+  })
+
+  test('Withdraw Governing Tokens', async () => {
+    await withdrawGoverningTokens(
+      rpcContext,
+      realmPk,
+      communityTokenOwnerPk,
+      COMMUNITY_MINT
     )
   })
-  */
+  test('Deposit All owned Governing Tokens', async () => {
+    const allTokenAmount =  
+    await depositGoverningTokens(
+      rpcContext,
+      realmPk,
+      communityTokenOwnerPk,
+      COMMUNITY_MINT
+      )
+    })
+    */
 })

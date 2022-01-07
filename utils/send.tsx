@@ -73,7 +73,7 @@ export async function signTransaction({
     await connection.getRecentBlockhash('max')
   ).blockhash
   if (wallet instanceof Keypair) {
-    transaction.sign(...[wallet, ...signers])
+    transaction.sign(wallet, ...signers)
     return transaction
   } else {
     transaction.setSigners(wallet.publicKey, ...signers.map((s) => s.publicKey))

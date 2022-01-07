@@ -48,10 +48,16 @@ export class DepositGoverningTokensArgs {
     GovernanceInstruction.DepositGoverningTokens
   amount: u64 | undefined
 
-  constructor(args: { amount: u64 | undefined }) {
-    this.amount = args.amount
+  constructor(args?: { amount: u64 | undefined }) {
+    this.amount = args?.amount
   }
 }
+/*
+export class DepositGoverningTokensArgs {
+  instruction: GovernanceInstruction =
+    GovernanceInstruction.DepositGoverningTokens
+}
+*/
 
 export class WithdrawGoverningTokensArgs {
   instruction: GovernanceInstruction =
