@@ -1,5 +1,6 @@
-import BN from 'bn.js'
 import { registerRealm } from 'actions/registerRealm'
+import { RegisterRealmRpc } from 'actions/registerRealm'
+
 import { depositGoverningTokens } from 'actions/depositGoverningTokens'
 import { withdrawGoverningTokens } from 'actions/withdrawGoverningTokens'
 
@@ -22,6 +23,9 @@ import {
   // VOTE_WEIGHT,
 } from './utils/constants'
 import { MintMaxVoteWeightSource } from '@models/accounts'
+import { getConnectionContext } from '@utils/connection'
+
+console.debug = function () {}
 
 describe('Unitary testing of program write-instruction', () => {
   let founder: Keypair
@@ -31,6 +35,12 @@ describe('Unitary testing of program write-instruction', () => {
   let programId: PublicKey
   const programVersion = 1
   let realmPk: PublicKey
+  const connectionCtx = getConnectionContext('localnet')
+  const realmCtx = {
+    connection: connectionCtx,
+    wallet: FOUNDER,
+    walletPubkey: FOUNDER.publicKey,
+  } as RegisterRealmRpc
 
   beforeAll(async () => {
     /*
@@ -66,9 +76,10 @@ describe('Unitary testing of program write-instruction', () => {
   test('registerRealm', async () => {
     const realmName = 'test-DAO'
     const voteWeightSource = MintMaxVoteWeightSource.FULL_SUPPLY_FRACTION
-    const minTokensToCreateGovernance = new BN(UNIT)
+    // const minTokensToCreateGovernance = new BN(UNIT)
+    const minTokensToCreateGovernance = UNIT.toString()
     realmPk = await registerRealm(
-      rpcContext,
+      realmCtx,
       programId,
       programVersion,
       realmName,
@@ -76,6 +87,9 @@ describe('Unitary testing of program write-instruction', () => {
       undefined,
       voteWeightSource,
       minTokensToCreateGovernance,
+      60,
+      true,
+      undefined,
       [founder.publicKey]
     )
 
