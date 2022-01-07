@@ -1,4 +1,7 @@
-import { HIDDEN_GOVERNANCES } from '@components/instructions/tools'
+import {
+  DEFAULT_NFT_TREASURY_MINT,
+  HIDDEN_GOVERNANCES,
+} from '@components/instructions/tools'
 import { GovernanceAccountType } from '@models/accounts'
 import { MintInfo } from '@solana/spl-token'
 import {
@@ -10,11 +13,11 @@ import {
 import { Instructions } from '@utils/uiTypes/proposalCreationTypes'
 import useWalletStore from 'stores/useWalletStore'
 import useRealm from './useRealm'
+
 export default function useGovernanceAssets() {
   const { governances, tokenMints, realmTokenAccounts } = useRealm()
   const connection = useWalletStore((s) => s.connection.current)
-  const { ownVoterWeight, realm } = useRealm()
-
+  const { ownVoterWeight, realm, symbol } = useRealm()
   const governancesArray = Object.keys(governances)
     .filter((gpk) => !HIDDEN_GOVERNANCES.has(gpk))
     .map((key) => governances[key])
@@ -73,37 +76,6 @@ export default function useGovernanceAssets() {
       ownVoterWeight.canCreateProposal(g.info.config)
     )
 
-  const availableInstructions = [
-    {
-      id: Instructions.Transfer,
-      name: 'Transfer Tokens',
-      isVisible: canUseTransferInstruction,
-    },
-    {
-      id: Instructions.ProgramUpgrade,
-      name: 'Upgrade Program',
-      isVisible: canUseProgramUpgradeInstruction,
-    },
-    {
-      id: Instructions.Mint,
-      name: 'Mint Tokens',
-      isVisible: canUseMintInstruction,
-    },
-    {
-      id: Instructions.Base64,
-      name: 'Execute Custom Instruction',
-      isVisible: canUseAnyInstruction,
-    },
-    {
-      id: Instructions.None,
-      name: 'None',
-      isVisible:
-        realm &&
-        Object.values(governances).some((g) =>
-          ownVoterWeight.canCreateProposal(g.info.config)
-        ),
-    },
-  ]
   const getAvailableInstructions = () => {
     return availableInstructions.filter((x) => x.isVisible)
   }
@@ -124,6 +96,7 @@ export default function useGovernanceAssets() {
         governance: i,
         token: realmTokenAccount,
         mint,
+        isNft: mint?.publicKey.toBase58() === DEFAULT_NFT_TREASURY_MINT,
       }
       governedTokenAccounts.push(obj)
     }
@@ -156,6 +129,54 @@ export default function useGovernanceAssets() {
     return governedMintInfoAccounts
   }
   const governedTokenAccounts = prepareTokenGovernances()
+  const governedTokenAccountsWithoutNfts = governedTokenAccounts.filter(
+    (x) => x.mint?.publicKey.toBase58() !== DEFAULT_NFT_TREASURY_MINT
+  )
+  const nftsGovernedTokenAccounts = governedTokenAccounts.filter(
+    (x) => x.mint?.publicKey.toBase58() === DEFAULT_NFT_TREASURY_MINT
+  )
+  const canUseTokenTransferInstruction = governedTokenAccountsWithoutNfts.some(
+    (g) =>
+      g.governance &&
+      ownVoterWeight.canCreateProposal(g.governance?.info?.config)
+  )
+
+  const availableInstructions = [
+    {
+      id: Instructions.Transfer,
+      name: 'Transfer Tokens',
+      isVisible: canUseTokenTransferInstruction,
+    },
+    {
+      id: Instructions.ProgramUpgrade,
+      name: 'Upgrade Program',
+      isVisible: canUseProgramUpgradeInstruction,
+    },
+    {
+      id: Instructions.Mint,
+      name: 'Mint Tokens',
+      isVisible: canUseMintInstruction,
+    },
+    {
+      id: Instructions.Base64,
+      name: 'Execute Custom Instruction',
+      isVisible: canUseAnyInstruction,
+    },
+    {
+      id: Instructions.MangoMakeChangeMaxAccounts,
+      name: 'Mango - change max accounts',
+      isVisible: canUseProgramUpgradeInstruction && symbol === 'MNGO',
+    },
+    {
+      id: Instructions.None,
+      name: 'None',
+      isVisible:
+        realm &&
+        Object.values(governances).some((g) =>
+          ownVoterWeight.canCreateProposal(g.info.config)
+        ),
+    },
+  ]
   return {
     governancesArray,
     getGovernancesByAccountType,
@@ -168,5 +189,7 @@ export default function useGovernanceAssets() {
     canMintRealmCommunityToken,
     canMintRealmCouncilToken,
     canUseProgramUpgradeInstruction,
+    governedTokenAccountsWithoutNfts,
+    nftsGovernedTokenAccounts,
   }
 }
