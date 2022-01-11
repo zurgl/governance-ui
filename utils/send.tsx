@@ -35,7 +35,7 @@ export async function sendTransaction({
   timeout = DEFAULT_TIMEOUT,
 }: {
   transaction: Transaction
-  wallet: Wallet
+  wallet: Wallet | Keypair
   signers?: Array<Keypair>
   connection: Connection
   sendingMessage?: string
@@ -65,18 +65,23 @@ export async function signTransaction({
   connection,
 }: {
   transaction: Transaction
-  wallet: Wallet
+  wallet: Wallet | Keypair
   signers?: Array<Keypair>
   connection: Connection
 }) {
   transaction.recentBlockhash = (
     await connection.getRecentBlockhash('max')
   ).blockhash
-  transaction.setSigners(wallet.publicKey, ...signers.map((s) => s.publicKey))
-  if (signers.length > 0) {
-    transaction.partialSign(...signers)
+  if (wallet instanceof Keypair) {
+    transaction.sign(wallet, ...signers)
+    return transaction
+  } else {
+    transaction.setSigners(wallet.publicKey, ...signers.map((s) => s.publicKey))
+    if (signers.length > 0) {
+      transaction.partialSign(...signers)
+    }
+    return await wallet.signTransaction(transaction)
   }
-  return await wallet.signTransaction(transaction)
 }
 
 export async function signTransactions({
@@ -118,14 +123,14 @@ export async function sendSignedTransaction({
   timeout?: number
 }): Promise<string> {
   // debugger
-  console.log('raw tx')
+  if (process.env.DEBUG) console.log('raw tx')
   const rawTransaction = signedTransaction.serialize()
   const startTime = getUnixTs()
 
-  console.log('raw tx', rawTransaction)
+  if (process.env.DEBUG) console.log('raw tx', rawTransaction)
 
   notify({ message: sendingMessage })
-  console.log('notify')
+  if (process.env.DEBUG) console.log('notify')
 
   const txid: TransactionSignature = await connection.sendRawTransaction(
     rawTransaction,
@@ -133,9 +138,9 @@ export async function sendSignedTransaction({
       skipPreflight: true,
     }
   )
-  console.log('notify2')
+  if (process.env.DEBUG) console.log('notify2')
 
-  console.log('Started awaiting confirmation for', txid)
+  if (process.env.DEBUG) console.log('Started awaiting confirmation for', txid)
 
   let done = false
 
@@ -150,12 +155,12 @@ export async function sendSignedTransaction({
   })()
 
   try {
-    console.log('calling confirmation sig', txid, timeout, connection)
+    if (process.env.DEBUG)
+      console.log('calling confirmation sig', txid, timeout, connection)
 
-    console.log(
-      'calling signatures confirmation',
-      await awaitTransactionSignatureConfirmation(txid, timeout, connection)
-    )
+    if (process.env.DEBUG) console.log('calling signatures confirmation')
+
+    await awaitTransactionSignatureConfirmation(txid, timeout, connection)
   } catch (err) {
     if (err.timeout) {
       throw new Error('Timed out awaiting confirmation on transaction')
@@ -163,22 +168,23 @@ export async function sendSignedTransaction({
 
     let simulateResult: SimulatedTransactionResponse | null = null
 
-    console.log('sined transaction', signedTransaction)
+    if (process.env.DEBUG) console.log('sined transaction', signedTransaction)
 
     try {
-      console.log('start simulate')
+      if (process.env.DEBUG) console.log('start simulate')
       simulateResult = (
         await simulateTransaction(connection, signedTransaction, 'single')
       ).value
     } catch (error) {
-      console.log('Error simulating: ', error)
+      console.error('Error simulating: ', error)
     }
 
-    console.log('simulate result', simulateResult)
+    if (process.env.DEBUG) console.log('simulate result', simulateResult)
 
     if (simulateResult && simulateResult.err) {
       if (simulateResult.logs) {
-        console.log('simulate resultlogs', simulateResult.logs)
+        if (process.env.DEBUG)
+          console.log('simulate resultlogs', simulateResult.logs)
 
         for (let i = simulateResult.logs.length - 1; i >= 0; --i) {
           const line = simulateResult.logs[i]
@@ -194,7 +200,7 @@ export async function sendSignedTransaction({
       throw new TransactionError(JSON.stringify(simulateResult.err), txid)
     }
 
-    console.log('transaction error lasdkasdn')
+    if (process.env.DEBUG) console.log('transaction error lasdkasdn')
 
     throw new TransactionError('Transaction failed', txid)
   } finally {
@@ -203,7 +209,7 @@ export async function sendSignedTransaction({
 
   notify({ message: successMessage, type: 'success', txid })
 
-  console.log('Latency', txid, getUnixTs() - startTime)
+  if (process.env.DEBUG) console.log('Latency', txid, getUnixTs() - startTime)
   return txid
 }
 
@@ -221,14 +227,15 @@ async function awaitTransactionSignatureConfirmation(
           return
         }
         done = true
-        console.log('Timed out for txid', txid)
+        if (process.env.DEBUG) console.log('Timed out for txid', txid)
         reject({ timeout: true })
       }, timeout)
       try {
         connection.onSignature(
           txid,
           (result) => {
-            console.log('WS confirmed', txid, result, result.err)
+            if (process.env.DEBUG)
+              console.log('WS confirmed', txid, result, result.err)
             done = true
             if (result.err) {
               reject(result.err)
@@ -238,10 +245,10 @@ async function awaitTransactionSignatureConfirmation(
           },
           connection.commitment
         )
-        console.log('Set up WS connection', txid)
+        if (process.env.DEBUG) console.log('Set up WS connection', txid)
       } catch (e) {
         done = true
-        console.log('WS error in setup', txid, e)
+        if (process.env.DEBUG) console.log('WS error in setup', txid, e)
       }
       while (!done) {
         // eslint-disable-next-line
@@ -251,17 +258,20 @@ async function awaitTransactionSignatureConfirmation(
               txid,
             ])
 
-            console.log('signatures cancel proposal', signatureStatuses)
+            if (process.env.DEBUG)
+              console.log('signatures cancel proposal', signatureStatuses)
 
             const result = signatureStatuses && signatureStatuses.value[0]
 
-            console.log('result signatures proosa', result, signatureStatuses)
+            if (process.env.DEBUG)
+              console.log('result signatures proosa', result, signatureStatuses)
 
             if (!done) {
               if (!result) {
                 // console.log('REST null result for', txid, result);
               } else if (result.err) {
-                console.log('REST error for', txid, result)
+                if (process.env.DEBUG)
+                  console.log('REST error for', txid, result)
                 done = true
                 reject(result.err)
               }
@@ -273,16 +283,18 @@ async function awaitTransactionSignatureConfirmation(
                   result.confirmationStatus === 'finalized'
                 )
               ) {
-                console.log('REST not confirmed', txid, result)
+                if (process.env.DEBUG)
+                  console.log('REST not confirmed', txid, result)
               } else {
-                console.log('REST confirmed', txid, result)
+                if (process.env.DEBUG)
+                  console.log('REST confirmed', txid, result)
                 done = true
                 resolve(result)
               }
             }
           } catch (e) {
             if (!done) {
-              console.log('REST connection error: txid', txid, e)
+              console.error('REST connection error: txid', txid, e)
             }
           }
         })()
@@ -306,22 +318,22 @@ export async function simulateTransaction(
     connection._disableBlockhashCaching
   )
 
-  console.log('simulating transaction', transaction)
+  if (process.env.DEBUG) console.log('simulating transaction', transaction)
 
   const signData = transaction.serializeMessage()
   // @ts-ignore
   const wireTransaction = transaction._serialize(signData)
   const encodedTransaction = wireTransaction.toString('base64')
 
-  console.log('encoding')
+  if (process.env.DEBUG) console.log('encoding')
   const config: any = { encoding: 'base64', commitment }
   const args = [encodedTransaction, config]
-  console.log('simulating data', args)
+  if (process.env.DEBUG) console.log('simulating data', args)
 
   // @ts-ignore
   const res = await connection._rpcRequest('simulateTransaction', args)
 
-  console.log('res simulating transaction', res)
+  if (process.env.DEBUG) console.log('res simulating transaction', res)
   if (res.error) {
     throw new Error('failed to simulate transaction: ' + res.error.message)
   }

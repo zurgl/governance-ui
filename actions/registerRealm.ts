@@ -46,9 +46,9 @@ import { ConnectionContext } from '@utils/connection'
   and reduce the code complexity
 */
 
-interface RegisterRealmRpc {
+export interface RegisterRealmRpc {
   connection: ConnectionContext
-  wallet: SignerWalletAdapter
+  wallet: SignerWalletAdapter | Keypair
   walletPubkey: PublicKey
 }
 
@@ -287,7 +287,7 @@ async function prepareGovernanceInstructions(
  * @returns a promise to be executed.
  */
 function sendTransactionFactory(
-  wallet: WalletSigner,
+  wallet: WalletSigner | Keypair,
   connection: Connection,
   councilMembersChunks: TransactionInstruction[][],
   councilSignersChunks: Keypair[][],

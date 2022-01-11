@@ -1,4 +1,5 @@
 import { PublicKey } from '@solana/web3.js'
+import { u64 } from '@solana/spl-token'
 
 import { RealmConfigArgs, GovernanceConfig, InstructionData } from './accounts'
 
@@ -45,7 +46,18 @@ export class CreateRealmArgs {
 export class DepositGoverningTokensArgs {
   instruction: GovernanceInstruction =
     GovernanceInstruction.DepositGoverningTokens
+  amount: u64 | undefined
+
+  constructor(args?: { amount: u64 | undefined }) {
+    this.amount = args?.amount
+  }
 }
+/*
+export class DepositGoverningTokensArgs {
+  instruction: GovernanceInstruction =
+    GovernanceInstruction.DepositGoverningTokens
+}
+*/
 
 export class WithdrawGoverningTokensArgs {
   instruction: GovernanceInstruction =
